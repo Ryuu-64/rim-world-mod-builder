@@ -1,5 +1,6 @@
 {
   "hasAssemblies": false,
   "projectName": "yourProjectName",
-  "projectFolder": "yourProjectFolder"
+  "projectFolder": "yourProjectFolder",
+  "buildPath": "yourBuildPath"
 }

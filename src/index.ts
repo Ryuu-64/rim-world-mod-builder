@@ -12,68 +12,69 @@ async function buildProject(): Promise<void> {
             }
         );
         const config: ProjectNameConfig = await readNameConfigPromise;
-        const readBuildConfigPromise: Promise<ProjectBuildConfig> = fs.readJSON(
-            "./src/config/" + config.projectConfigName,
-            {
-                encoding: "utf8"
-            }
-        );
-        const projectConfig = await readBuildConfigPromise;
-        //endregion
-
-        const buildFolder = "./build/" + projectConfig.projectName;
-
-        //region remove build folder before build
-        await fs.remove(buildFolder);
-        //endregion
-
-        const promises: Promise<any>[] = [];
-        if (projectConfig.hasAssemblies) {
-            const copyAssembliesPromise: Promise<void> = fs.pathExists(
-                projectConfig.projectFolder + "1.4/Assemblies"
-            ).then((isExist: boolean) => {
-                if (isExist) {
-                    promises.push(
-                        fs.copy(
-                            projectConfig.projectFolder + "1.4/Assemblies",
-                            buildFolder + "/1.4/Assemblies"
-                        )
-                    );
+        for (let projectConfigName of config.projectConfigNames) {
+            const readBuildConfigPromise: Promise<ProjectBuildConfig> = fs.readJSON(
+                "./src/config/" + projectConfigName,
+                {
+                    encoding: "utf8"
                 }
-            });
-            await copyAssembliesPromise;
-        }
+            );
+            const buildConfig = await readBuildConfigPromise;
+            const buildPath = buildConfig.buildPath;
+            //endregion
 
-        promises.push(
-            fs.copy(
-                projectConfig.projectFolder + "1.4/Defs",
-                buildFolder + "/1.4/Defs"
-            ),
-            fs.copy(
-                projectConfig.projectFolder + "1.4/Patches",
-                buildFolder + "/1.4/Patches"
-            ),
-            fs.copy(
-                projectConfig.projectFolder + "About",
-                buildFolder + "/About"
-            ),
-            fs.copy(
-                projectConfig.projectFolder + "Languages",
-                buildFolder + "/Languages"
-            )
-        );
-        await Promise.all(promises);
-        console.log("Build completed successfully.");
+            //region remove build folder before build
+            await fs.remove(buildPath);
+            //endregion
+
+            const promises: Promise<any>[] = [];
+            if (buildConfig.hasAssemblies) {
+                const copyAssembliesPromise: Promise<void> = fs.pathExists(
+                    buildConfig.projectFolder + "1.4/Assemblies"
+                ).then((isExist: boolean) => {
+                    if (isExist) {
+                        promises.push(
+                            fs.copy(
+                                buildConfig.projectFolder + "1.4/Assemblies",
+                                buildPath + "/1.4/Assemblies"
+                            )
+                        );
+                    }
+                });
+                await copyAssembliesPromise;
+            }
+
+            promises.push(
+                fs.copy(
+                    buildConfig.projectFolder + "1.4/Defs",
+                    buildPath + "/1.4/Defs"
+                ),
+                fs.copy(
+                    buildConfig.projectFolder + "1.4/Patches",
+                    buildPath + "/1.4/Patches"
+                ),
+                fs.copy(
+                    buildConfig.projectFolder + "About",
+                    buildPath + "/About"
+                ),
+                fs.copy(
+                    buildConfig.projectFolder + "Languages",
+                    buildPath + "/Languages"
+                )
+            );
+            await Promise.all(promises);
+            console.log(`Build completed successfully, project config name="${projectConfigName}".`);
+        }
     } catch (err) {
         console.error('An error occurred during build:', err);
     }
 }
 
 class ProjectNameConfig {
-    projectConfigName: string;
+    projectConfigNames: string[];
 
-    constructor(projectConfigName: string) {
-        this.projectConfigName = projectConfigName;
+    constructor(projectConfigNames: string[]) {
+        this.projectConfigNames = projectConfigNames;
     }
 }
 
@@ -81,10 +82,12 @@ class ProjectBuildConfig {
     hasAssemblies: boolean;
     projectName: string;
     projectFolder: string;
+    buildPath: string;
 
-    constructor(hasAssemblies: boolean, projectName: string, projectFolder: string) {
+    constructor(hasAssemblies: boolean, projectName: string, projectFolder: string, buildPath: string) {
         this.hasAssemblies = hasAssemblies;
         this.projectName = projectName;
         this.projectFolder = projectFolder;
+        this.buildPath = buildPath;
     }
 }
